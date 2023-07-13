@@ -1,8 +1,7 @@
 import logging
 import os
 import asyncio
-from aiohttp import ClientSession
-
+import requests
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
 
@@ -46,15 +45,9 @@ async def help(message: types.Message):
         )
 
 
-# data = requests.get("https://www.cbr-xml-daily.ru/daily_json.js").json()
-
-
-async def get_data():
-    async with ClientSession() as session:
-        url = "https://www.cbr-xml-daily.ru/daily_json.js"
-
-        async with session.get(url) as response:
-            return await response.json()
+def get_data():
+    data = requests.get("https://www.cbr-xml-daily.ru/daily_json.js").json()
+    return data
 
 
 @dp.message_handler(content_types="text")
@@ -62,7 +55,7 @@ async def eur_rate(message: types.Message):
     if message.text == "EUR":
         await message.answer(
             "Курс евро на данный момент - " +
-            f"{await get_data()['Valute']['EUR']['Value']} 🙄"
+            f"{get_data()['Valute']['EUR']['Value']} 🙄"
             )
 
 
@@ -71,7 +64,7 @@ async def usd_rate(message: types.Message):
     if message.text == "USD":
         await message.answer(
             "Курс американского доллара на данный момент - " +
-            f"{data['Valute']['USD']['Value']} 🙄"
+            f"{get_data()['Valute']['USD']['Value']} 🙄"
             )
 
 
@@ -80,7 +73,7 @@ async def cny_rate(message: types.Message):
     if message.text == "CNY":
         await message.answer(
             "Курс китайского юаня на данный момент - " +
-            f"{data['Valute']['CNY']['Value']} 🙄"
+            f"{get_data()['Valute']['CNY']['Value']} 🙄"
             )
 
 
@@ -89,7 +82,7 @@ async def try_rate(message: types.Message):
     if message.text == "TRY":
         await message.answer(
             "Курс турецкой лиры на данный момент - " +
-            f"{data['Valute']['TRY']['Value']} 🙄"
+            f"{get_data()['Valute']['TRY']['Value']} 🙄"
             )
 
 
@@ -98,7 +91,7 @@ async def byn_rate(message: types.Message):
     if message.text == "BYN":
         await message.answer(
             "Курс белорусского рубля на данный момент - " +
-            f"{data['Valute']['BYN']['Value']} 🙄"
+            f"{get_data()['Valute']['BYN']['Value']} 🙄"
             )
 
 
@@ -107,7 +100,7 @@ async def kzt_rate(message: types.Message):
     if message.text == "KZT":
         await message.answer(
             "Курс казахского тенге на данный момент - " +
-            f"{data['Valute']['KZT']['Value']} 🙄"
+            f"{get_data()['Valute']['KZT']['Value']} 🙄"
             )
 
 
@@ -116,5 +109,4 @@ async def no_way(message: types.Message):
     await message.answer("Других валют не завезли. И кто в этом виноват? 🤪")
 
 if __name__ == '__main__':
-    asyncio.run(get_data())
     executor.start_polling(dp, skip_updates=True)
