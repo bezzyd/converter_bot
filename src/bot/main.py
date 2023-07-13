@@ -1,7 +1,8 @@
 import logging
 import os
-import asyncio
-import requests
+import json
+import decimal
+import aiohttp
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
 
@@ -18,7 +19,7 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=["start"])
 async def choose_currency(message: types.Message):
     markup = types.ReplyKeyboardMarkup(
-        resize_keyboard=True, one_time_keyboard=True, row_width=2
+        resize_keyboard=True, row_width=2
         )
     eur_button = types.InlineKeyboardButton(text="EUR")
     usd_button = types.InlineKeyboardButton(text="USD")
@@ -45,67 +46,69 @@ async def help(message: types.Message):
         )
 
 
-def get_data():
-    data = requests.get("https://www.cbr-xml-daily.ru/daily_json.js").json()
-    return data
+async def get_data():
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://www.cbr-xml-daily.ru/daily_json.js") as response:
+            data = await response.read()
+            return json.loads(data)
 
 
-@dp.message_handler(content_types="text")
+@dp.message_handler(lambda message: message.text == "EUR")
 async def eur_rate(message: types.Message):
-    if message.text == "EUR":
-        await message.answer(
-            "Курс евро на данный момент - " +
-            f"{get_data()['Valute']['EUR']['Value']} 🙄"
-            )
+    task = await get_data()
+    await message.answer(
+        "Курс евро на данный момент - " +
+        f"{round(task['Valute']['EUR']['Value'], 2)} 🙄"
+        )
 
 
-@dp.message_handler(content_types="text")
+@dp.message_handler(lambda message: message.text == "USD")
 async def usd_rate(message: types.Message):
-    if message.text == "USD":
-        await message.answer(
-            "Курс американского доллара на данный момент - " +
-            f"{get_data()['Valute']['USD']['Value']} 🙄"
-            )
+    task = await get_data()
+    await message.answer(
+        "Курс американского доллара на данный момент - " +
+        f"{round(task['Valute']['USD']['Value'], 2)} 🙄"
+        )
 
 
-@dp.message_handler(content_types="text")
+@dp.message_handler(lambda message: message.text == "CNY")
 async def cny_rate(message: types.Message):
-    if message.text == "CNY":
-        await message.answer(
-            "Курс китайского юаня на данный момент - " +
-            f"{get_data()['Valute']['CNY']['Value']} 🙄"
-            )
+    task = await get_data()
+    await message.answer(
+        "Курс китайского юаня на данный момент - " +
+        f"{round(task['Valute']['CNY']['Value'], 2)} 🙄"
+        )
 
 
-@dp.message_handler(content_types="text")
+@dp.message_handler(lambda message: message.text == "TRY")
 async def try_rate(message: types.Message):
-    if message.text == "TRY":
-        await message.answer(
-            "Курс турецкой лиры на данный момент - " +
-            f"{get_data()['Valute']['TRY']['Value']} 🙄"
-            )
+    task = await get_data()
+    await message.answer(
+        "Курс турецкой лиры на данный момент - " +
+        f"{round(decimal.Decimal(task['Valute']['TRY']['Value']) / decimal.Decimal(10), 2)} 🙄"
+        )
 
 
-@dp.message_handler(content_types="text")
+@dp.message_handler(lambda message: message.text == "BYN")
 async def byn_rate(message: types.Message):
-    if message.text == "BYN":
-        await message.answer(
-            "Курс белорусского рубля на данный момент - " +
-            f"{get_data()['Valute']['BYN']['Value']} 🙄"
-            )
+    task = await get_data()
+    await message.answer(
+        "Курс белорусского рубля на данный момент - " +
+        f"{round(task['Valute']['BYN']['Value'], 2)} 🙄"
+        )
 
 
-@dp.message_handler(content_types="text")
+@dp.message_handler(lambda message: message.text == "KZT")
 async def kzt_rate(message: types.Message):
-    if message.text == "KZT":
-        await message.answer(
-            "Курс казахского тенге на данный момент - " +
-            f"{get_data()['Valute']['KZT']['Value']} 🙄"
-            )
+    task = await get_data()
+    await message.answer(
+        "Курс казахского тенге на данный момент - " +
+        f"{round(decimal.Decimal(task['Valute']['KZT']['Value']) / decimal.Decimal(100), 2)} 🙄"
+        )
 
 
 @dp.message_handler()
-async def no_way(message: types.Message):
+async def answer_for_other_messages(message: types.Message):
     await message.answer("Других валют не завезли. И кто в этом виноват? 🤪")
 
 if __name__ == '__main__':
